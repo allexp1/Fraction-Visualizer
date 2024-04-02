@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fraction Visualizer 1.0.4</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h2 {
+            color: #444;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        label, input, button {
+            display: block;
+            margin-top: 10px;
+        }
+        input, button {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            background-color: #fafafa;
+        }
+        #errorMessage {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Fraction Visualizer 1.0.4</h2>
+        <label for="fraction1">Fraction 1 (numerator/denominator):</label>
+        <input type="text" id="fraction1" placeholder="e.g., 17/5">
+        <label for="fraction2">Fraction 2 (numerator/denominator):</label>
+        <input type="text" id="fraction2" placeholder="e.g., 28/6">
+        <button id="drawButton">Draw Fractions</button>
+        <p id="errorMessage"></p>
+    </div>
+    <canvas id="fractionCanvas" width="1200" height="200"></canvas>
+
+    <script>
+        const canvas = document.getElementById('fractionCanvas');
+        const ctx = canvas.getContext('2d');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function validateFraction(numerator, denominator) {
+            return Math.ceil(numerator / denominator) <= 5;
+        }
+
+        function drawFraction(startX, centerY, radius, numerator, denominator, fillColor, fractionText) {
+            let partsToDraw = Math.min(Math.ceil(numerator / denominator), 5) * denominator;
+            let offsetX = 0;
+            let totalOffsetX = 0;
+
+            ctx.fillStyle = '#000';
+            ctx.font = '16px Arial';
+            ctx.fillText(fractionText, startX, centerY - (radius + 20));
+
+            for (let part = 0; part < partsToDraw; part++) {
+                const anglePerPart = 2 * Math.PI / denominator;
+                const startAngle = anglePerPart * (part % denominator) - Math.PI / 2;
+                const endAngle = startAngle + anglePerPart;
+
+                ctx.beginPath();
+                ctx.moveTo(startX + offsetX, centerY);
+                ctx.arc(startX + offsetX, centerY, radius, startAngle, endAngle);
+                ctx.lineTo(startX + offsetX, centerY);
+                ctx.closePath();
+
+                ctx.fillStyle = part < numerator ? fillColor : 'transparent';
+                ctx.fill();
+                ctx.stroke();
+
+                if ((part + 1) % denominator === 0) {
+                    offsetX += radius * 2.5;
+                    totalOffsetX = offsetX;
+                }
+            }
+
+            for (let circle = 0; circle < Math.ceil(partsToDraw / denominator); circle++) {
+                ctx.beginPath();
+                ctx.arc(startX + (radius * 2.5 * circle), centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            return totalOffsetX;
+        }
+
+        function visualizeFractions() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            errorMessage.textContent = "";
+
+            const fraction1 = document.getElementById('fraction1').value.split('/');
+            const fraction2 = document.getElementById('fraction2').value.split('/');
+
+            const isValidFraction1 = validateFraction(parseInt(fraction1[0]), parseInt(fraction1[1]));
+            const isValidFraction2 = validateFraction(parseInt(fraction2[0]), parseInt(fraction2[1]));
+
+            if (!isValidFraction1 || !isValidFraction2) {
+                errorMessage.textContent = "Error: Each fraction can result in a maximum of 5 circles.";
+                return;
+            }
+
+            const totalOffsetX1 = drawFraction(50, 100, 40, parseInt(fraction1[0]), parseInt(fraction1[1]), 'red', fraction1.join('/'));
+            const offsetForFraction2 = 50 + totalOffsetX1 + 100;
+            drawFraction(offsetForFraction2, 100, 40, parseInt(fraction2[0]), parseInt(fraction2[1]), 'blue', fraction2.join('/'));
+        }
+
+        document.getElementById('drawButton').addEventListener('click', visualizeFractions);
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function() {
+                errorMessage.textContent = "";
+            });
+
+            input.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    visualizeFractions();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
